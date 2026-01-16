@@ -44,7 +44,7 @@ def modePASV(clientSocket):
     if data.startswith("227"):
         status = 227
         # Complete
-
+        
         # ip is first 4 numbers, port is last 2 numbers calculated (N5*256)+N6
         # "(222,3,2,321,3,54)"
         # "222,3,2,321,3,54"
@@ -53,7 +53,7 @@ def modePASV(clientSocket):
         # port = equation(3,54)
         
         start , end = data.find('(')+1 , data.find(')') #find parenthesis
-        content = data[start:end] #take out the parenthesis from the data
+        content = data[start:end] #make a new string (content between the parenthesis)
         numbers = content.split(',') #split the numbers by the comma
         ip , port = '.'.join(numbers[:4]) , (int(numbers[4])*256)+int(numbers[5]) #grab the frist 4 numbers
 
@@ -74,7 +74,7 @@ def main():
     # COMPLETE
     PORT = 21 #port number (constant for PORT)
 
-    HOST = 'inet.cs.fiu.edu' # COMPLETE (constant for HOST)
+    HOST = sys.argv[1] # 2nd parameter command line
     # COMPLETE
     
     clientSocket.connect((HOST, PORT)) # connect the socket to the host and the port
