@@ -101,7 +101,7 @@ def main():
             if dataIn.startswith("230"):
                 status = 230
 
-       
+    
     if status == 230:
         # It is your choice whether to use ACTIVE or PASV mode. In any event:
         # COMPLETE
@@ -115,20 +115,25 @@ def main():
                   
                 if command == 'ls': #show list
                     pasvStatus , dataSocket = modePASV(clientSocket)
-                    returnCode = sendCommand(clientSocket, 'LIST\r\n') #passes data
-                    print(returnCode)
-                    while True:
-                        data = dataSocket.recv(1024)
-                        if not data:
-                            break
-                        print(data.decode(), end='')
-                    dataSocket.close()
+                    if pasvStatus == 227 and dataSocket is not None:
+                        returnCode = sendCommand(clientSocket, 'LIST\r\n')#passes data
+                        print(returnCode)
+                        while True:
+                            data = dataSocket.recv(1024)
+                            if not data:
+                                break
+                            print(data.decode(), end='')
+                        dataSocket.close()
+                        print(receiveData(clientSocket))
 
                 elif command == 'cd': #enter remote directory
                     returnCode = sendCommand(clientSocket, 'CWD '+arg+'\r\n') #change working directory
 
                 elif command == 'get': #get the remote file
                     pasvStatus , dataSocket = modePASV(clientSocket) #passes data 
+                    if pasvStatus != 227 or dataSocket is None:
+                        print("PASV failed")
+                        continue
                     returnCode = sendCommand(clientSocket,'RETR '+arg+'\r\n') # retrive file
                     print(returnCode)
                     while True:
@@ -137,28 +142,31 @@ def main():
                             break
                         print(data.decode(), end='')
                     dataSocket.close()
+                    print(receiveData(clientSocket))
 
                 elif command == 'put': #upload file to server
                     pasvStatus , dataSocket = modePASV(clientSocket) #passes data
-                    returnCode = sendCommand(clientSocket,'STOR '+arg+'\r\n') #store file 
-                    print(returnCode)
-                    bytess = open(arg, 'rb') 
-                    while True:
-                        bytess_data = bytess.read(1024)
-                        if not bytess_data:
-                            break
-                        dataSocket.sendall(bytess_data)#we send the bytes data
-                    dataSocket.close() #close the socket 
-                    bytess.close()
-                    reply = receiveData(clientSocket) #receive the data 
-                    print(reply) #print the data we receive
+                    if pasvStatus == 227 and dataSocket is not None:
+                        returnCode = sendCommand(clientSocket,'STOR '+arg+'\r\n') #store file 
+                        print(returnCode)
+                        bytess = open(arg, 'rb') 
+                        while True:
+                            bytess_data = bytess.read(1024)
+                            if not bytess_data:
+                                break
+                            dataSocket.sendall(bytess_data)#we send the bytes data
+                        dataSocket.close() #close the socket 
+                        bytess.close()
+                        reply = receiveData(clientSocket) #receive the data 
+                        print(reply) #print the data we receive
 
                 elif command == 'delete': # delete the remote file
                     returnCode = sendCommand(clientSocket,'DELE '+arg+'\r\n')
                     print(returnCode)
                     
                 elif command == 'quit':
-                    quitFTP(clientSocket)                     
+                    quitFTP(clientSocket)
+                    break                     
                     
     
     print("Disconnecting...")
