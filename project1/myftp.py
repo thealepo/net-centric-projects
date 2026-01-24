@@ -44,7 +44,7 @@ def modePASV(clientSocket):
     if data.startswith("227"):
         status = 227
         # Complete
-
+        
         # ip is first 4 numbers, port is last 2 numbers calculated (N5*256)+N6
         # "(222,3,2,321,3,54)"
         # "222,3,2,321,3,54"
@@ -53,7 +53,7 @@ def modePASV(clientSocket):
         # port = equation(3,54)
         
         start , end = data.find('(')+1 , data.find(')') #find parenthesis
-        content = data[start:end] #take out the parenthesis from the data
+        content = data[start:end] #make a new string (content between the parenthesis)
         numbers = content.split(',') #split the numbers by the comma
         ip , port = '.'.join(numbers[:4]) , (int(numbers[4])*256)+int(numbers[5]) #grab the frist 4 numbers
 
@@ -74,7 +74,7 @@ def main():
     # COMPLETE
     PORT = 21 #port number (constant for PORT)
 
-    HOST = 'inet.cs.fiu.edu' # COMPLETE (constant for HOST)
+    HOST = sys.argv[1] # 2nd parameter command line
     # COMPLETE
     
     clientSocket.connect((HOST, PORT)) # connect the socket to the host and the port
@@ -89,7 +89,6 @@ def main():
         print("Sending username")
         # COMPLETE
         dataIn = sendCommand(clientSocket,"USER "+username+"\r\n") #send username
-        
         print(dataIn)
 
         print("Sending password")
@@ -102,7 +101,7 @@ def main():
             if dataIn.startswith("230"):
                 status = 230
 
-       
+    
     if status == 230:
         # It is your choice whether to use ACTIVE or PASV mode. In any event:
         # COMPLETE
@@ -116,20 +115,25 @@ def main():
                   
                 if command == 'ls': #show list
                     pasvStatus , dataSocket = modePASV(clientSocket)
-                    returnCode = sendCommand(clientSocket, 'LIST\r\n') #passes data
-                    print(returnCode)
-                    while True:
-                        data = dataSocket.recv(1024)
-                        if not data:
-                            break
-                        print(data.decode(), end='')
-                    dataSocket.close()
+                    if pasvStatus == 227 and dataSocket is not None:
+                        returnCode = sendCommand(clientSocket, 'LIST\r\n')#passes data
+                        print(returnCode)
+                        while True:
+                            data = dataSocket.recv(1024)
+                            if not data:
+                                break
+                            print(data.decode(), end='')
+                        dataSocket.close()
+                        print(receiveData(clientSocket))
 
                 elif command == 'cd': #enter remote directory
                     returnCode = sendCommand(clientSocket, 'CWD '+arg+'\r\n') #change working directory
 
                 elif command == 'get': #get the remote file
                     pasvStatus , dataSocket = modePASV(clientSocket) #passes data 
+                    if pasvStatus != 227 or dataSocket is None:
+                        print("PASV failed")
+                        continue
                     returnCode = sendCommand(clientSocket,'RETR '+arg+'\r\n') # retrive file
                     print(returnCode)
                     while True:
@@ -138,28 +142,31 @@ def main():
                             break
                         print(data.decode(), end='')
                     dataSocket.close()
+                    print(receiveData(clientSocket))
 
                 elif command == 'put': #upload file to server
                     pasvStatus , dataSocket = modePASV(clientSocket) #passes data
-                    returnCode = sendCommand(clientSocket,'STOR '+arg+'\r\n') #store file 
-                    print(returnCode)
-                    bytess = open(arg, 'rb') 
-                    while True:
-                        bytess_data = bytess.read(1024)
-                        if not bytess_data:
-                            break
-                        dataSocket.sendall(bytess_data)#we send the bytes data
-                    dataSocket.close() #close the socket 
-                    bytess.close()
-                    reply = receiveData(clientSocket) #receive the data 
-                    print(reply) #print the data we receive
+                    if pasvStatus == 227 and dataSocket is not None:
+                        returnCode = sendCommand(clientSocket,'STOR '+arg+'\r\n') #store file 
+                        print(returnCode)
+                        bytess = open(arg, 'rb') 
+                        while True:
+                            bytess_data = bytess.read(1024)
+                            if not bytess_data:
+                                break
+                            dataSocket.sendall(bytess_data)#we send the bytes data
+                        dataSocket.close() #close the socket 
+                        bytess.close()
+                        reply = receiveData(clientSocket) #receive the data 
+                        print(reply) #print the data we receive
 
                 elif command == 'delete': # delete the remote file
                     returnCode = sendCommand(clientSocket,'DELE '+arg+'\r\n')
                     print(returnCode)
                     
                 elif command == 'quit':
-                    quitFTP(clientSocket)                     
+                    quitFTP(clientSocket)
+                    break                     
                     
     
     print("Disconnecting...")
