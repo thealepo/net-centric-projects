@@ -88,7 +88,7 @@ def main():
         status = 220
         print("Sending username")
         # COMPLETE
-        sendCommand(clientSocket,"USER "+username+"\r\n") #send username
+        dataIn = sendCommand(clientSocket,"USER "+username+"\r\n") #send username
         
         print(dataIn)
 
@@ -96,7 +96,7 @@ def main():
         if dataIn.startswith("331"):
             status = 331
             # COMPLETE
-            sendCommand(clientSocket,'PASS '+password+'\r\n') #send password
+            dataIn = sendCommand(clientSocket,'PASS '+password+'\r\n') #send password
 
             print(dataIn)
             if dataIn.startswith("230"):
