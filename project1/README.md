@@ -5,6 +5,7 @@
 ### Member Names & IDs
 - Alex Eduardo Sanchez, 6403828
 - Curt Francis, 6328922
+- Deryn Hurst, 6457077
 
 ### Language Used
 - Python3
