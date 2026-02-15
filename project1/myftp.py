@@ -7,6 +7,7 @@
 
 #Alex Sanchez PID:6403828
 #Curt Francis PID:6328922
+#Deryn Hurst PID:6457077
 
 #import socket module
 from socket import *
@@ -100,9 +101,7 @@ def main():
             print(dataIn)
             if dataIn.startswith("230"):
                 status = 230
-            else:
-                quitFTP(clientSocket)
-                return
+
     
     if status == 230:
         # It is your choice whether to use ACTIVE or PASV mode. In any event:
