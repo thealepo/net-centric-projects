@@ -4,7 +4,7 @@
 
 ### Member Names & IDs
 - Alex Eduardo Sanchez, 6403828
-- Diego Avalos, 6347463
+- Curt Francis, 6328922
 
 ### Language Used
 - Python3
