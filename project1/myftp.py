@@ -5,7 +5,8 @@
 # Reading: https://unix.stackexchange.com/questions/93566/ls-command-in-ftp-not-working
 # Reading: https://stackoverflow.com/questions/14498331/what-should-be-the-ftp-response-to-pasv-command
 
-#Alex Sanchez PID:6403828
+# Alex Sanchez | PID: 6403828
+
 
 #import socket module
 from socket import *
