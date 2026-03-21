@@ -2,6 +2,7 @@ import socket
 import sys
 import struct
 import random
+import io
 
 
 def build_dns_query(domain: str) -> bytes:
@@ -82,6 +83,7 @@ def displayContent(raw_response):
 
 def extractIP():
     # COMPLETE
+
     print()
 
 def sendQueryToIntermediate(hostname , intermediate_ip):
@@ -102,9 +104,10 @@ def receiveIntermediateReply(server_ip , query):
 
     return raw_response
 
-def displayIPs():
+def displayIPs(ips):
     # COMPLETE
-    print()
+    for ip in ips:
+        print(ip)
 
 
 def main():
