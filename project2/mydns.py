@@ -33,9 +33,52 @@ def receiveRootReply(server, query) -> bytes:
     return raw_response
 
 
-def displayContent():
-    # COMPLETE
-    print()
+def parse_dns_header(reader):
+    items = struct.unpack("!HHHHHH", reader.read(12))
+
+    return{
+        "id" : items[0],
+        "flags" : items[1],
+        "question_count" : items[2],
+        "answer_count" : items[3],
+        "authority_count" : items[4],
+        "additional_count" : items[5]
+    }
+
+def parse_dns_question_name(reader):
+    question_name_parts = []
+    while True:
+        length = reader.read(1)
+        if not length:
+            break
+        length = ord(length)
+
+        if length == 0:
+            break
+
+        label = reader.read(length).decode('utf-8')
+        question_name_parts.append(label)
+
+    return ".".join(question_name_parts)
+
+def parse_dns_question(reader):
+    question_name = parse_dns_question_name(reader)
+    question_type, question_class = struct.unpack("!HH", reader.read(4))
+
+    return {
+        "question_name" : question_name,
+        "question_type" : question_type,
+        "question_class" : question_class
+    }
+
+def displayContent(raw_response):
+    reader = io.BytesIO(raw_response)
+    header = parse_dns_header(reader)
+    question = parse_dns_question(reader)
+
+    print('\t' + str(header.get('answer_count')) + " Answers.")
+    print('\t' + str(header.get('authority_count')) + " Intermediate Name Servers.")
+    print('\t' + str(header.get('additional_count')) + " Additional Information Records.")
 
 def extractIP():
     # COMPLETE
