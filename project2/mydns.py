@@ -41,13 +41,23 @@ def extractIP():
     # COMPLETE
     print()
 
-def sendQueryToIntermediate():
+def sendQueryToIntermediate(hostname , intermediate_ip):
     # COMPLETE
-    print()
+    print("DNS server to query: " + intermediate_ip)
 
-def receiveIntermediateReply():
+    query = build_dns_query(hostname)
+
+    raw_response = receiveIntermediateReply(intermediate_ip , query)
+    return raw_response
+
+def receiveIntermediateReply(server_ip , query):
     # COMPLETE
-    print()
+    with socket.socket(socket.AF_INET , socket.SOCK_DGRAM) as sock:
+        sock.settimeout(5)
+        sock.sendto(query , (server_ip,53))
+        raw_response , _ = sock.recvfrom(4096)
+
+    return raw_response
 
 def displayIPs():
     # COMPLETE
