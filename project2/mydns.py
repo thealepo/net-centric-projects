@@ -3,6 +3,7 @@ import sys
 import struct
 import random
 import io
+import random
 
 
 def build_dns_query(domain: str) -> bytes:
@@ -100,7 +101,6 @@ def parse_dns_question_name(reader):
 def parse_dns_question(reader):
     question_name = parse_dns_question_name(reader)
     question_type, question_class = struct.unpack("!HH", reader.read(4))
-
     return {
         "question_name" : question_name,
         "question_type" : question_type,
@@ -186,7 +186,8 @@ def main():
     displayIPs(ips)
 
     # For Intermediate Servers
-    message = sendQueryToIntermediate(request[0], ips[0])
+    r = random.randrange(0,len(ips))
+    message = sendQueryToIntermediate(request[0], ips[r])
     print("\nIntermediate response:")
     displayContent(message)
 
