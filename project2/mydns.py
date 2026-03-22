@@ -22,8 +22,8 @@ def sendQueryToRoot(request):
     server   = request[1]
     print("DNS server to query: " + server)
     query = build_dns_query(hostname)
-    receiveRootReply(server, query)
-
+    raw_response = receiveRootReply(server, query)
+    return raw_response
 
 def receiveRootReply(server, query) -> bytes:
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -45,6 +45,41 @@ def parse_dns_header(reader):
         "authority_count" : items[4],
         "additional_count" : items[5]
     }
+def parse_rr(reader, data):
+    name = read_name(reader, data)
+    rtype, rclass, ttl, rdlength = struct.unpack("!HHIH", reader.read(10))
+    rdata = reader.read(rdlength)
+
+    return {
+        "name": name,
+        "type": rtype,
+        "class": rclass,
+        "ttl": ttl,
+        "rdata": rdata
+    }
+
+def read_name(reader, data):
+    labels = []
+    while True:
+        length = reader.read(1)[0]
+
+        # pointer (11xxxxxx)
+        if (length & 0xC0) == 0xC0:
+            pointer_byte = reader.read(1)[0]
+            offset = ((length & 0x3F) << 8) | pointer_byte
+
+            current_pos = reader.tell()
+            reader.seek(offset)
+            labels.append(read_name(reader, data))
+            reader.seek(current_pos)
+            break
+
+        if length == 0:
+            break
+
+        labels.append(reader.read(length).decode())
+
+    return ".".join(labels)
 
 def parse_dns_question_name(reader):
     question_name_parts = []
@@ -81,10 +116,39 @@ def displayContent(raw_response):
     print('\t' + str(header.get('authority_count')) + " Intermediate Name Servers.")
     print('\t' + str(header.get('additional_count')) + " Additional Information Records.")
 
-def extractIP():
-    # COMPLETE
+def extractIP(raw_response):
+    reader = io.BytesIO(raw_response)
+    header = parse_dns_header(reader)
 
-    print()
+    # skip question
+    for _ in range(header["question_count"]):
+        parse_dns_question(reader)
+
+    # skip answers
+    for _ in range(header["answer_count"]):
+        parse_rr(reader, raw_response)
+
+    # skip authority (NS records)
+    for _ in range(header["authority_count"]):
+        parse_rr(reader, raw_response)
+
+    # parse additional records with the IPs
+    ips = []
+
+    for _ in range(header["additional_count"]):
+        rr = parse_rr(reader, raw_response)
+
+        # Type A (IPv4)
+        if rr["type"] == 1:
+            ip = socket.inet_ntoa(rr["rdata"])
+            ips.append(ip)
+
+        # Type AAAA (IPv6)
+        elif rr["type"] == 28:
+            ip = socket.inet_ntop(socket.AF_INET6, rr["rdata"])
+            ips.append(ip)
+
+    return ips
 
 def sendQueryToIntermediate(hostname , intermediate_ip):
     # COMPLETE
@@ -114,6 +178,19 @@ def main():
     request = sys.argv[1:]
     print()
     print("------------------------------------")
-    sendQueryToRoot(request)
+    # For main DNS server
+    message = sendQueryToRoot(request)
+    displayContent(message)
+    ips = extractIP(message)
+    print("\nIntermediate Name Server IPs:")
+    displayIPs(ips)
 
+    # For Intermediate Servers
+    message = sendQueryToIntermediate(request[0], ips[0])
+    print("\nIntermediate response:")
+    displayContent(message)
+
+    #For intermediate servers, extract IPs and display
+    ips = extractIP(message)
+    displayIPs(ips)
 main()
