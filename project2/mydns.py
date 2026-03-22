@@ -158,7 +158,6 @@ def sendQueryToIntermediate(hostname , intermediate_ip):
 
     raw_response = receiveIntermediateReply(intermediate_ip , query)
     return raw_response
-
 def receiveIntermediateReply(server_ip , query):
     # COMPLETE
     address_family = socket.AF_INET6 if ":" in server_ip else socket.AF_INET
