@@ -161,7 +161,8 @@ def sendQueryToIntermediate(hostname , intermediate_ip):
 
 def receiveIntermediateReply(server_ip , query):
     # COMPLETE
-    with socket.socket(socket.AF_INET , socket.SOCK_DGRAM) as sock:
+    address_family = socket.AF_INET6 if ":" in server_ip else socket.AF_INET
+    with socket.socket(address_family , socket.SOCK_DGRAM) as sock:
         sock.settimeout(5)
         sock.sendto(query , (server_ip,53))
         raw_response , _ = sock.recvfrom(4096)
@@ -171,7 +172,7 @@ def receiveIntermediateReply(server_ip , query):
 def displayIPs(ips):
     # COMPLETE
     for ip in ips:
-        print(ip)
+        print(f'\t{ip}')
 
 
 def main():
@@ -194,4 +195,6 @@ def main():
     #For intermediate servers, extract IPs and display
     ips = extractIP(message)
     displayIPs(ips)
-main()
+
+if __name__ == "__main__":
+    main()
