@@ -8,10 +8,18 @@ def start_client():
     print("RSA keypair created")
 
     print("Creating client socket")
+    control_socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
 
     print("Connecting to server")
+    control_socket.connect(('localhost' , 8080))
+    control_socket.send(b'connect')
 
+    response = control_socket.recv(1024).decode('utf-8')
+    data_port = int(response)
+    
     print("Creating data socket")
+    data_socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
+    data_socket.connect(('localhost' , data_port))
 
     print("Requesting tunnel")
 
