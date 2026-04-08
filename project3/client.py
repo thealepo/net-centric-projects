@@ -1,10 +1,30 @@
 import socket
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
 
 def start_client():
     print("Starting client...")
 
     
     print("Creating RSA keypair")
+    private_key = rsa.generate_private_key(
+        public_exponent = 65537,
+        key_size = 2048
+    )
+
+    public_key = private_key.public_key()
+
+    serialized_private_key = private_key.private_bytes(
+        encoding = serialization.Encoding.PEM,
+        format = serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm = serialization.NoEncryption()
+    )
+
+    serialized_public_key = public_key.public_bytes(
+        encoding = serialization.Encoding.PEM,
+        format = serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+
     print("RSA keypair created")
 
     print("Creating client socket")
@@ -22,14 +42,20 @@ def start_client():
     data_socket.connect(('localhost' , data_port))
 
     print("Requesting tunnel")
+    data_socket.send(b'tunnel')
 
     print("Server public key received")
+    response = data_socket.recv(1024).decode('utf-8')
+    
+    # remove message header and footer
+    response = response[26: -25]
 
     print("Tunnel established")
+    data_socket.send(serialized_public_key)
 
     print("Encrypting message: Hello")
 
-    print(f"Sending encrypted message: {encrypted_message}")
+    #print(f"Sending encrypted message: {encrypted_message}")
 
     print("Received hash")
     print("Computing hash")
