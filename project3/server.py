@@ -60,7 +60,7 @@ def start_server():
 
         message = data_connection.recv(1024).decode()
         # remove message header and footer
-        message = message[26: -25]
+        client_key = message[26: -25]
 
 
     print("Post requested.")

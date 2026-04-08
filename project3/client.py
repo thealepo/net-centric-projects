@@ -48,7 +48,7 @@ def start_client():
     response = data_socket.recv(1024).decode('utf-8')
     
     # remove message header and footer
-    response = response[26: -25]
+    server_key = response[26: -25]
 
     print("Tunnel established")
     data_socket.send(serialized_public_key)
