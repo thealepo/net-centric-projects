@@ -1,6 +1,10 @@
 import socket
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
+import hashlib
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
 def start_client():
     print("Starting client...")
@@ -52,10 +56,49 @@ def start_client():
 
     print("Tunnel established")
     data_socket.send(serialized_public_key)
+    
+    message = b'Hello'
+    print(f"Encrypting message: Hello")
 
-    print("Encrypting message: Hello")
+    # Rebuild server public key object from the stripped PEM
+    server_public_key = load_pem_public_key(
+        b'-----BEGIN PUBLIC KEY-----' + server_key.encode() + b'-----END PUBLIC KEY-----'
+    )
+    encrypted_message = server_public_key.encrypt(
+        message,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    print(f"Sending encrypted message: {encrypted_message.hex()}")
+    data_socket.send(b'post')
+    data_socket.send(encrypted_message)
 
-    #print(f"Sending encrypted message: {encrypted_message}")
+    # Receive and decrypt the hash from the server
+    encrypted_hash = b''
+    while len(encrypted_hash) < 256:
+        chunk = data_socket.recv(256 - len(encrypted_hash))
+        encrypted_hash += chunk
+    print("Received hash")
+
+    received_hash = private_key.decrypt(
+        encrypted_hash,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+
+    print("Computing hash")
+    local_hash = hashlib.sha256(message).digest()
+
+    if local_hash == received_hash:
+        print("Secure")
+    else:
+        print("Compromised")
 
     print("Received hash")
     print("Computing hash")
