@@ -1,6 +1,8 @@
 import socket
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import hashes
 
 def start_server():
     print("Starting server...")
@@ -65,9 +67,49 @@ def start_server():
 
     print("Post requested.")
 
-    #print(f"Decrypted message: {encrypted_message}")
+    data_connection.recv(1024)  # consume 'post' command
+    encrypted_message = b''
+    while len(encrypted_message) < 256:
+        chunk = data_connection.recv(256 - len(encrypted_message))
+        encrypted_message += chunk
+    print(f"Received encrypted message: {encrypted_message.hex()}")
+
+ 
+    decrypted_message = private_key.decrypt(
+        encrypted_message,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    print(f"Decrypted message: {decrypted_message.decode('utf-8')}")
 
     print("Computing hash")
+    import hashlib
+    from cryptography.hazmat.primitives.serialization import load_pem_public_key
+    message_hash = hashlib.sha256(decrypted_message).digest()
+    print(f"Responding with hash: {message_hash.hex()}")
+
+    client_public_key = load_pem_public_key(
+        b'-----BEGIN PUBLIC KEY-----' + client_key.encode() + b'-----END PUBLIC KEY-----'
+    )
+    encrypted_hash = client_public_key.encrypt(
+        message_hash,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    data_connection.send(encrypted_hash)
+
+    print("Computing hash")
+
+    #print(f"Responding with hash: {message_hash}")
+
+if __name__ == "__main__":
+    start_server()
 
     #print(f"Responding with hash: {message_hash}")
 
