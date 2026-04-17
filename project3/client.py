@@ -40,6 +40,7 @@ def start_client():
 
     response = control_socket.recv(1024).decode('utf-8')
     data_port = int(response)
+    print(f"Received data port from server: {data_port}")
     
     print("Creating data socket")
     data_socket = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
